@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard @drcaquetti — Últimos 30 dias</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--s1:#0d1321;--s2:#111827;
+  --border:#1a2744;--border2:#0d1829;
+  --t1:#f0f4ff;--t2:#8899b8;--t3:#445577;--t4:#1e3a5f;
+  --blue:#3b82f6;--green:#10b981;--purple:#8b5cf6;
+  --amber:#f59e0b;--red:#ef4444;--cyan:#06b6d4;--pink:#ec4899;
+}
+body{background:var(--bg);color:var(--t1);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;padding:28px;max-width:1400px;margin:0 auto}
+
+/* Header */
+.header{display:flex;align-items:flex-start;gap:18px;margin-bottom:32px;padding-bottom:26px;border-bottom:1px solid var(--border)}
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1d4ed8,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 0 0 3px var(--border)}
+.header-meta h1{font-size:23px;font-weight:900;letter-spacing:-.5px}
+.handle{font-size:13px;color:var(--blue);font-weight:600;margin-top:3px}
+.bio{font-size:12px;color:var(--t3);margin-top:6px;max-width:540px;line-height:1.6}
+.header-right{margin-left:auto;text-align:right;flex-shrink:0}
+.period-tag{display:inline-block;background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:7px 16px;font-size:12px;font-weight:600;color:var(--t2)}
+.report-date{font-size:11px;color:var(--t3);margin-top:7px}
+.ig-badge{display:inline-block;background:linear-gradient(90deg,#833ab4,#fd1d1d,#fcb045);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:6px}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--ac);border-radius:14px 14px 0 0}
+.kpi .lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.kpi .val{font-size:26px;font-weight:900;letter-spacing:-1px;color:var(--t1);margin-top:8px;line-height:1}
+.kpi .sub{font-size:11px;color:var(--t3);margin-top:5px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.chip{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--t2)}
+.chip b{color:var(--t1);font-weight:800}
+
+/* Layout helpers */
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:22px}
+.sec{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);margin-bottom:18px}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{text-align:left;padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border)}
+thead th.r{text-align:right}
+tbody td{padding:11px 12px;border-bottom:1px solid var(--border2);color:var(--t2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--s2)}
+.r{text-align:right}
+.bold{color:var(--t1);font-weight:700}
+.title-link{font-weight:600;color:var(--t1);max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;text-decoration:none}
+.title-link:hover{color:var(--blue);text-decoration:underline}
+.badge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.02em}
+.br{background:#1e1b4b;color:#a5b4fc}
+.bc{background:#042f2e;color:#5eead4}
+.top-val{color:var(--green);font-weight:800}
+.watch{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.wbar{height:5px;background:#1a2744;border-radius:3px;width:50px;flex-shrink:0}
+.wfill{height:100%;border-radius:3px;background:var(--cyan)}
+
+/* Demographics */
+.g-item{margin-bottom:16px}
+.g-item:last-child{margin-bottom:0}
+.g-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.g-name{font-size:13px;font-weight:600;color:var(--t2)}
+.g-pct{font-size:14px;font-weight:800;color:var(--t1)}
+.g-count{font-size:11px;color:var(--t3)}
+.g-bar{height:7px;background:#1a2744;border-radius:4px;overflow:hidden}
+.g-fill{height:100%;border-radius:4px}
+
+/* Countries */
+.c-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2)}
+.c-row:last-child{border-bottom:none}
+.c-flag{font-size:20px;flex-shrink:0}
+.c-name{font-size:13px;font-weight:600;color:var(--t1);flex:1}
+.c-n{font-size:13px;font-weight:700;color:var(--t1);flex-shrink:0;width:52px;text-align:right}
+.c-pct{font-size:11px;color:var(--t3);flex-shrink:0;width:40px;text-align:right}
+
+/* Insight box */
+.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.insight{background:var(--s1);border:1px solid var(--border);border-left:3px solid var(--ac2,var(--blue));border-radius:10px;padding:14px 16px}
+.insight .i-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:6px}
+.insight p{font-size:13px;color:var(--t2);line-height:1.6}
+.insight p b{color:var(--t1)}
+
+/* Footer */
+.footer{text-align:center;margin-top:32px;padding-top:18px;border-top:1px solid var(--border);font-size:11px;color:var(--t3)}
+
+@media(max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr)}
+  .two-col,.three-col{grid-template-columns:1fr}
+  .insights{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .insights{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="avatar">FC</div>
+  <div class="header-meta">
+    <div class="ig-badge">★ Instagram</div>
+    <h1>Dr. Felippe Caquetti</h1>
+    <div class="handle">@drcaquetti &nbsp;·&nbsp; 18.497 seguidores &nbsp;·&nbsp; 486 posts</div>
+    <div class="bio">Medicina integrativa · Ozonioterapia · Precisão metabólica · Terapias ortobiológicas · Fundador do Instituto Caquetti · Coautor da 4ª Declaração de Madrid</div>
+  </div>
+  <div class="header-right">
+    <div class="period-tag">10 mai – 08 jun 2026 · 30 dias</div>
+    <div class="report-date">Gerado em 09/06/2026 · Arvic Group</div>
+  </div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi" style="--ac:var(--blue)">
+    <div class="lbl">Seguidores</div>
+    <div class="val">18.497</div>
+    <div class="sub">Total atual</div>
+  </div>
+  <div class="kpi" style="--ac:var(--green)">
+    <div class="lbl">Novos Seguidores</div>
+    <div class="val">+444</div>
+    <div class="sub">↑ 2,4% no período</div>
+  </div>
+  <div class="kpi" style="--ac:var(--purple)">
+    <div class="lbl">Alcance Total</div>
+    <div class="val">25.455</div>
+    <div class="sub">Contas únicas/dia (soma)</div>
+  </div>
+  <div class="kpi" style="--ac:var(--amber)">
+    <div class="lbl">Visualizações</div>
+    <div class="val">67.789</div>
+    <div class="sub">Views totais</div>
+  </div>
+  <div class="kpi" style="--ac:var(--red)">
+    <div class="lbl">Interações</div>
+    <div class="val">3.687</div>
+    <div class="sub">Likes · Comments · Saves · Shares</div>
+  </div>
+  <div class="kpi" style="--ac:var(--cyan)">
+    <div class="lbl">Engajamento</div>
+    <div class="val">14,5%</div>
+    <div class="sub">Interações ÷ Alcance</div>
+  </div>
+</div>
+
+<!-- CHIPS -->
+<div class="chips">
+  <div class="chip">❤️ Likes: <b>2.175</b></div>
+  <div class="chip">💬 Comentários: <b>193</b></div>
+  <div class="chip">🔖 Saves: <b>146</b></div>
+  <div class="chip">↗️ Shares: <b>501</b></div>
+  <div class="chip">📹 Posts publicados: <b>9</b></div>
+  <div class="chip">🎬 Reels: <b>7</b></div>
+  <div class="chip">🖼 Carrosséis: <b>2</b></div>
+  <div class="chip">👥 Contas engajadas/dia: <b>~68</b></div>
+  <div class="chip">📅 Média views/dia: <b>2.260</b></div>
+</div>
+
+<!-- CHART ROW 1: Views+Reach + New Followers -->
+<div class="two-col">
+  <div class="card">
+    <div class="sec">Visualizações e Alcance — evolução diária</div>
+    <canvas id="cViewsReach" height="190"></canvas>
+  </div>
+  <div class="card">
+    <div class="sec">Novos seguidores por dia</div>
+    <canvas id="cFollowers" height="190"></canvas>
+  </div>
+</div>
+
+<!-- CHART: Interactions daily -->
+<div class="card" style="margin-bottom:14px">
+  <div class="sec">Interações totais por dia</div>
+  <canvas id="cInteractions" height="90"></canvas>
+</div>
+
+<!-- DEMOGRAPHICS -->
+<div class="three-col">
+
+  <!-- Gender -->
+  <div class="card">
+    <div class="sec">Gênero da audiência</div>
+    <div style="max-width:160px;margin:0 auto 22px auto">
+      <canvas id="cGender" height="160"></canvas>
+    </div>
+    <div class="g-item">
+      <div class="g-row">
+        <div><div class="g-name">Feminino</div><div class="g-count">10.726 seguidoras</div></div>
+        <div class="g-pct">63,8%</div>
+      </div>
+      <div class="g-bar"><div class="g-fill" style="width:63.8%;background:var(--pink)"></div></div>
+    </div>
+    <div class="g-item">
+      <div class="g-row">
+        <div><div class="g-name">Masculino</div><div class="g-count">3.933 seguidores</div></div>
+        <div class="g-pct">23,4%</div>
+      </div>
+      <div class="g-bar"><div class="g-fill" style="width:23.4%;background:var(--blue)"></div></div>
+    </div>
+    <div class="g-item">
+      <div class="g-row">
+        <div><div class="g-name">Não informado</div><div class="g-count">2.152</div></div>
+        <div class="g-pct">12,8%</div>
+      </div>
+      <div class="g-bar"><div class="g-fill" style="width:12.8%;background:#475569"></div></div>
+    </div>
+  </div>
+
+  <!-- Age -->
+  <div class="card">
+    <div class="sec">Faixa etária da audiência</div>
+    <canvas id="cAge" height="220"></canvas>
+  </div>
+
+  <!-- Countries -->
+  <div class="card">
+    <div class="sec">Top países (16.757 mapeados)</div>
+    <div class="c-row"><div class="c-flag">🇧🇷</div><div class="c-name">Brasil</div><div class="c-n">16.065</div><div class="c-pct">95,9%</div></div>
+    <div class="c-row"><div class="c-flag">🇵🇹</div><div class="c-name">Portugal</div><div class="c-n">151</div><div class="c-pct">0,9%</div></div>
+    <div class="c-row"><div class="c-flag">🇺🇸</div><div class="c-name">Estados Unidos</div><div class="c-n">125</div><div class="c-pct">0,7%</div></div>
+    <div class="c-row"><div class="c-flag">🇵🇾</div><div class="c-name">Paraguai</div><div class="c-n">33</div><div class="c-pct">0,2%</div></div>
+    <div class="c-row"><div class="c-flag">🇪🇸</div><div class="c-name">Espanha</div><div class="c-n">31</div><div class="c-pct">0,2%</div></div>
+    <div class="c-row"><div class="c-flag">🇮🇳</div><div class="c-name">Índia</div><div class="c-n">27</div><div class="c-pct">0,2%</div></div>
+    <div class="c-row"><div class="c-flag">🇮🇹</div><div class="c-name">Itália</div><div class="c-n">26</div><div class="c-pct">0,2%</div></div>
+    <div class="c-row"><div class="c-flag">🇨🇱</div><div class="c-name">Chile</div><div class="c-n">23</div><div class="c-pct">0,1%</div></div>
+    <div class="c-row"><div class="c-flag">🇦🇷</div><div class="c-name">Argentina</div><div class="c-n">20</div><div class="c-pct">0,1%</div></div>
+    <div class="c-row"><div class="c-flag">🇳🇬</div><div class="c-name">Nigéria</div><div class="c-n">19</div><div class="c-pct">0,1%</div></div>
+  </div>
+
+</div>
+
+<!-- POSTS TABLE -->
+<div class="card" style="margin-bottom:14px">
+  <div class="sec">Posts dos últimos 30 dias — ordenados por alcance</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:200px">Post</th>
+          <th>Tipo</th>
+          <th>Data</th>
+          <th class="r">Alcance</th>
+          <th class="r">Views</th>
+          <th class="r">Likes</th>
+          <th class="r">Coments.</th>
+          <th class="r">Saves</th>
+          <th class="r">Shares</th>
+          <th class="r">Eng. Total</th>
+          <th class="r" style="min-width:110px">Avg Watch</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DY2wnsxFLVe/" target="_blank">Ozonioterapia — NRF2 e mitocôndria</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>27/05</td>
+          <td class="r bold">4.053</td>
+          <td class="r">5.752</td>
+          <td class="r">250</td>
+          <td class="r">24</td>
+          <td class="r">61</td>
+          <td class="r">76</td>
+          <td class="r top-val">436</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:82%"></div></div>14,0s</div></td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DZGMhIQzrkN/" target="_blank">Subindo em palcos — congresso</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>02/06</td>
+          <td class="r bold">1.887</td>
+          <td class="r">2.454</td>
+          <td class="r">61</td>
+          <td class="r">20</td>
+          <td class="r">1</td>
+          <td class="r">16</td>
+          <td class="r bold">105</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:33%"></div></div>5,7s</div></td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DY47WgXAUko/" target="_blank">Bremelanotide — libido e MC4R</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>28/05</td>
+          <td class="r bold">1.552</td>
+          <td class="r">2.162</td>
+          <td class="r">40</td>
+          <td class="r">5</td>
+          <td class="r">16</td>
+          <td class="r">15</td>
+          <td class="r bold">77</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:69%"></div></div>11,8s</div></td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/p/DYKS0MpESrU/" target="_blank">Dia das Mães — homenagem família</a></td>
+          <td><span class="badge bc">CARROSSEL</span></td>
+          <td>10/05</td>
+          <td class="r">863</td>
+          <td class="r">2.372</td>
+          <td class="r">104</td>
+          <td class="r">11</td>
+          <td class="r">0</td>
+          <td class="r">2</td>
+          <td class="r bold">118</td>
+          <td class="r" style="color:var(--t3)">—</td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DYzoFAhkfYl/" target="_blank">Cérebro hiperativo — dopamina</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>26/05</td>
+          <td class="r">831</td>
+          <td class="r">1.163</td>
+          <td class="r">58</td>
+          <td class="r">21</td>
+          <td class="r">0</td>
+          <td class="r">10</td>
+          <td class="r bold">90</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:72%"></div></div>12,3s</div></td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DZN5efLTQ1y/" target="_blank">AC/DC — música em casa</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>05/06</td>
+          <td class="r">779</td>
+          <td class="r">1.247</td>
+          <td class="r">95</td>
+          <td class="r">20</td>
+          <td class="r">0</td>
+          <td class="r">6</td>
+          <td class="r bold">123</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:100%"></div></div>17,1s ⭐</div></td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/p/DYvFc58lCE3/" target="_blank">37° Congresso Ortomolecular</a></td>
+          <td><span class="badge bc">CARROSSEL</span></td>
+          <td>24/05</td>
+          <td class="r">466</td>
+          <td class="r">1.155</td>
+          <td class="r">66</td>
+          <td class="r">14</td>
+          <td class="r">0</td>
+          <td class="r">0</td>
+          <td class="r bold">80</td>
+          <td class="r" style="color:var(--t3)">—</td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DZVf94mTGx9/" target="_blank">Conteúdo → 1.000 médicos</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>08/06</td>
+          <td class="r">371</td>
+          <td class="r">534</td>
+          <td class="r">37</td>
+          <td class="r">2</td>
+          <td class="r">1</td>
+          <td class="r">1</td>
+          <td class="r bold">41</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:55%"></div></div>9,4s</div></td>
+        </tr>
+        <tr>
+          <td><a class="title-link" href="https://www.instagram.com/reel/DZRaJfhNioL/" target="_blank">AC/DC v2 (repost)</a></td>
+          <td><span class="badge br">REEL</span></td>
+          <td>07/06</td>
+          <td class="r">106</td>
+          <td class="r">118</td>
+          <td class="r">2</td>
+          <td class="r">0</td>
+          <td class="r">0</td>
+          <td class="r">0</td>
+          <td class="r bold">2</td>
+          <td class="r"><div class="watch"><div class="wbar"><div class="wfill" style="width:44%"></div></div>7,5s</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight" style="--ac2:var(--green)">
+    <div class="i-title">🏆 Post destaque</div>
+    <p>O reel <b>Ozonioterapia — NRF2</b> (27/mai) foi o maior hit: <b>4.053 alcance</b>, <b>5.752 views</b>, <b>436 interações</b> e <b>61 saves</b>. Conteúdo técnico-denso performa melhor que entretenimento.</p>
+  </div>
+  <div class="insight" style="--ac2:var(--amber)">
+    <div class="i-title">⏱ Watch time destaque</div>
+    <p>O reel <b>AC/DC</b> (05/jun) teve o maior tempo médio de visualização: <b>17,1s</b>. Conteúdo pessoal/emocional segura mais tempo na tela — considerar para estratégia de distribuição.</p>
+  </div>
+  <div class="insight" style="--ac2:var(--purple)">
+    <div class="i-title">👥 Audiência principal</div>
+    <p>Predominância <b>feminina (63,8%)</b> e faixa etária <b>35–54 anos (59%)</b>. Pacientes premium e profissionais de saúde alinhados com o posicionamento do Instituto Caquetti.</p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Dados via Instagram Graph API · Windsor.ai · 09/06/2026 · Arvic Group — <a href="https://www.instagram.com/drcaquetti/" target="_blank" style="color:var(--blue)">@drcaquetti</a>
+</div>
+
+<script>
+const labels=["10/mai","11/mai","12/mai","13/mai","14/mai","15/mai","16/mai","17/mai","18/mai","19/mai","20/mai","21/mai","22/mai","23/mai","24/mai","25/mai","26/mai","27/mai","28/mai","29/mai","30/mai","31/mai","01/jun","02/jun","03/jun","04/jun","05/jun","06/jun","07/jun","08/jun"];
+const views=[4293,1561,977,1636,1080,3251,2759,743,1337,1612,726,372,286,3321,2029,740,1910,3405,3802,2755,4710,2318,3144,3109,3619,2039,2174,2284,2946,2851];
+const reach=[2491,820,535,401,309,828,816,312,746,660,306,109,103,600,571,284,832,1925,2379,795,1102,746,1061,1533,1360,852,1026,632,495,826];
+const interactions=[124,83,55,87,49,195,83,53,68,46,32,17,27,342,120,74,162,250,233,109,133,78,133,182,211,139,199,128,118,157];
+const followers=[12,17,21,16,14,7,25,16,11,11,11,8,9,39,18,18,12,16,18,13,10,17,18,18,23,10,13,13,10,0];
+
+const gridColor='rgba(26,39,68,0.8)';
+const tickColor='#445577';
+const baseScales={
+  x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:15}},
+  y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}},beginAtZero:true}
+};
+
+// Views + Reach
+new Chart(document.getElementById('cViewsReach'),{
+  type:'line',
+  data:{
+    labels,
+    datasets:[
+      {label:'Views',data:views,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.07)',fill:true,tension:0.4,pointRadius:2,borderWidth:2},
+      {label:'Alcance',data:reach,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.07)',fill:true,tension:0.4,pointRadius:2,borderWidth:2}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{labels:{color:'#8899b8',font:{size:11},boxWidth:12,padding:12}}},
+    scales:baseScales
+  }
+});
+
+// New followers
+new Chart(document.getElementById('cFollowers'),{
+  type:'bar',
+  data:{
+    labels,
+    datasets:[{label:'Novos seguidores',data:followers,backgroundColor:'rgba(16,185,129,0.7)',borderColor:'#10b981',borderWidth:1,borderRadius:3}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{labels:{color:'#8899b8',font:{size:11},boxWidth:12}}},
+    scales:{
+      x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},maxRotation:45,autoSkip:true,maxTicksLimit:10}},
+      y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}},beginAtZero:true}
+    }
+  }
+});
+
+// Interactions
+new Chart(document.getElementById('cInteractions'),{
+  type:'line',
+  data:{
+    labels,
+    datasets:[{label:'Interações',data:interactions,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.08)',fill:true,tension:0.4,pointRadius:3,borderWidth:2}]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{labels:{color:'#8899b8',font:{size:11},boxWidth:12}}},
+    scales:baseScales
+  }
+});
+
+// Gender donut
+new Chart(document.getElementById('cGender'),{
+  type:'doughnut',
+  data:{
+    labels:['Feminino','Masculino','Não inf.'],
+    datasets:[{data:[63.8,23.4,12.8],backgroundColor:['#ec4899','#3b82f6','#475569'],borderColor:'#0d1321',borderWidth:3}]
+  },
+  options:{
+    responsive:true,cutout:'72%',
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed.toFixed(1)}%`}}
+    }
+  }
+});
+
+// Age horizontal bar
+new Chart(document.getElementById('cAge'),{
+  type:'bar',
+  data:{
+    labels:['13–17','18–24','25–34','35–44','45–54','55–64','65+'],
+    datasets:[{
+      label:'Seguidores',
+      data:[12,424,2279,5033,4916,2654,1493],
+      backgroundColor:['rgba(59,130,246,.2)','rgba(59,130,246,.4)','rgba(59,130,246,.65)','rgba(59,130,246,.95)','rgba(139,92,246,.9)','rgba(139,92,246,.65)','rgba(139,92,246,.4)'],
+      borderColor:['#3b82f6','#3b82f6','#3b82f6','#3b82f6','#8b5cf6','#8b5cf6','#8b5cf6'],
+      borderWidth:1,borderRadius:4
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:true,
+    indexAxis:'y',
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}},beginAtZero:true},
+      y:{grid:{display:false},ticks:{color:'#8899b8',font:{size:12,weight:'600'}}}
+    }
+  }
+});
+</script>
+</body>
+</html>
